@@ -1,0 +1,17 @@
+# Core dependencies for AgentCore deployment
+bedrock-agentcore>=0.1.4
+strands-agents>=1.9.1
+strands-agents-tools>=0.2.8
+openai>=1.108.2
+python-dotenv>=1.0.0
+
+# Observability (required for AgentCore)
+aws-opentelemetry-distro>=0.10.1
+
+# HTTP server dependencies
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+pydantic>=2.0.0
+
+# Utilities
+requests>=2.31.0

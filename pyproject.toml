@@ -1,0 +1,36 @@
+[project]
+name = "openai-strands-agentcore"
+version = "1.0.0"
+description = "Production OpenAI Strands Agent for AWS Bedrock AgentCore deployment"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    # Core AgentCore dependencies
+    "bedrock-agentcore>=0.1.4",
+    # Strands Agent framework
+    "strands-agents>=1.9.1",
+    "strands-agents-tools>=0.2.8",
+    # OpenAI integration
+    "openai>=1.108.2",
+    # Configuration and utilities
+    "python-dotenv>=1.0.0",
+    "pydantic>=2.0.0",
+    # HTTP server (for custom deployments)
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    # AWS and observability
+    "boto3>=1.40.36",
+    "aws-opentelemetry-distro>=0.10.1",
+    # Utilities
+    "requests>=2.31.0",
+    "pytest>=8.4.2",
+]
+
+[project.scripts]
+openai-agent = "src.agents.openai_agent:main"
+deploy-agent = "deployment.deploy_to_agentcore:main"
+invoke-agent = "deployment.invoke_agent:main"
+
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
