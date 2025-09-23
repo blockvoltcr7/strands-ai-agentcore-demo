@@ -28,6 +28,5 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=30s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:8080/ping || exit 1
 
-# Run with OpenTelemetry instrumentation for observability
-CMD ["python", "-m", "opentelemetry.instrumentation.auto_instrumentation", \
-     "python", "src/agents/openai_agent.py"]
+# Run the agent directly
+CMD ["python", "src/agents/openai_agent.py"]

@@ -4,6 +4,7 @@ from strands.models.openai import OpenAIModel
 from strands_tools import calculator
 import sys
 import os
+import logging
 
 # Add src to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
@@ -11,6 +12,16 @@ from config.settings import settings
 from utils.helpers import validate_payload, format_response
 
 app = BedrockAgentCoreApp()
+
+# Configure logging for observability
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+    handlers=[logging.StreamHandler()]
+)
+
+# Enable Strands SDK logging
+logging.getLogger("strands").setLevel(logging.DEBUG)
 
 # Validate settings
 settings.validate()
@@ -33,18 +44,28 @@ agent = Agent(model=model, tools=[calculator])
 @app.entrypoint
 def invoke(payload):
     """Process user input and return a response using OpenAI"""
+    logger = logging.getLogger(__name__)
     try:
+        logger.info(f"Processing request with payload: {payload}")
+
         # Validate payload and extract prompt
         user_message = validate_payload(payload)
+        logger.info(f"Validated user message: {user_message}")
 
         # Process with agent
+        logger.info("Invoking agent with OpenAI model")
         result = agent(user_message)
+        logger.info("Agent processing completed successfully")
 
         # Return formatted response
-        return {"result": result.message}
+        response = {"result": result.message}
+        logger.info(f"Returning response: {response}")
+        return response
     except ValueError as e:
+        logger.error(f"Validation error: {str(e)}")
         return {"error": f"Invalid request: {str(e)}"}
     except Exception as e:
+        logger.error(f"Processing error: {str(e)}", exc_info=True)
         return {"error": f"Failed to process request: {str(e)}"}
 
 if __name__ == "__main__":

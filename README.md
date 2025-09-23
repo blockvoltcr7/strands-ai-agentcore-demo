@@ -2,6 +2,8 @@
 
 Production-ready OpenAI Strands Agent optimized for deployment to AWS Bedrock AgentCore. This project focuses exclusively on the working OpenAI integration path, providing a clean, maintainable solution for AI agent deployment.
 
+**📋 Complete Deployment Guide:** For step-by-step AWS deployment instructions, see **[AGENT_CORE_DEPLOYMENT_GUIDE.md](./AGENT_CORE_DEPLOYMENT_GUIDE.md)** - covers IAM setup, ECR configuration, manual console deployment, and troubleshooting.
+
 ## 🚀 Quick Start
 
 ```bash
@@ -216,21 +218,35 @@ Health check endpoint: `http://localhost:8080/ping`
 
 ## 🚀 Deployment to AWS AgentCore
 
+**📖 For complete step-by-step deployment instructions, see: [AGENT_CORE_DEPLOYMENT_GUIDE.md](./AGENT_CORE_DEPLOYMENT_GUIDE.md)**
+
+The comprehensive deployment guide covers:
+- ✅ Complete IAM setup with correct permissions
+- ✅ ECR repository creation and Docker image management
+- ✅ Manual AWS console deployment (recommended)
+- ✅ Environment configuration and troubleshooting
+- ✅ Real-world deployment experience and solutions
+
+### Quick Deployment Overview
+
+For experienced users, here's the condensed version:
+
 ### Prerequisites
 - AWS CLI configured with appropriate permissions
 - IAM role for AgentCore with proper permissions
 - Docker installed and running
+- **See [AGENT_CORE_DEPLOYMENT_GUIDE.md](./AGENT_CORE_DEPLOYMENT_GUIDE.md) for detailed setup**
 
 ### Automated Deployment
 
 ```bash
-# Deploy to AgentCore
+# Deploy to AgentCore (may fail due to service availability)
 python deployment/deploy_to_agentcore.py \
   --role-arn arn:aws:iam::YOUR-ACCOUNT-ID:role/AgentRuntimeRole \
   --region us-east-1
 ```
 
-### Manual Deployment Steps
+### Manual Deployment Steps (Recommended)
 
 ```bash
 # 1. Create ECR repository
@@ -242,12 +258,8 @@ docker buildx build --platform linux/arm64 \
   -t YOUR-ACCOUNT.dkr.ecr.us-east-1.amazonaws.com/openai-strands-agent:latest \
   --push .
 
-# 3. Deploy to AgentCore
-aws bedrock-agentcore-control create-agent-runtime \
-  --agent-runtime-name openai-strands-agent \
-  --agent-runtime-artifact containerConfiguration='{containerUri=YOUR-ECR-URI}' \
-  --network-configuration networkMode=PUBLIC \
-  --role-arn YOUR-AGENTCORE-ROLE-ARN
+# 3. Deploy via AWS Console (preferred method)
+# See AGENT_CORE_DEPLOYMENT_GUIDE.md for detailed console instructions
 ```
 
 ### Testing Deployed Agent
@@ -258,6 +270,8 @@ python deployment/invoke_agent.py \
   --agent-arn arn:aws:bedrock-agentcore:us-east-1:ACCOUNT:runtime/AGENT-ID \
   --prompt "Hello! Test the deployed agent."
 ```
+
+**⚠️ Important:** If automated deployment fails, use the manual console approach detailed in the [comprehensive deployment guide](./AGENT_CORE_DEPLOYMENT_GUIDE.md).
 
 ## 🧪 Testing & Validation
 
