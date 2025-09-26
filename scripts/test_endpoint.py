@@ -1,5 +1,4 @@
 import requests
-import json
 
 url = "https://gateway-quick-start-3b33cf-6ew1ekhgbc.gateway.bedrock-agentcore.us-east-1.amazonaws.com/mcp"
 headers = {

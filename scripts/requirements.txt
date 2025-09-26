@@ -1,0 +1,7 @@
+# Strands AI Agent Dependencies
+strands>=0.1.0
+boto3>=1.34.0
+botocore>=1.34.0
+
+# Optional dependencies for enhanced functionality
+python-dotenv>=1.0.0
