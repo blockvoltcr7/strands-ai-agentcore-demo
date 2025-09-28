@@ -1,7 +1,7 @@
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
 from strands import Agent
 from strands.models.openai import OpenAIModel
-from strands_tools import calculator
+from strands_tools import calculator, mem0_memory, use_llm
 import sys
 import os
 import logging
@@ -20,7 +20,6 @@ logging.basicConfig(
     handlers=[logging.StreamHandler()]
 )
 
-# Enable Strands SDK logging
 logging.getLogger("strands").setLevel(logging.DEBUG)
 
 # Validate settings
@@ -37,9 +36,12 @@ model = OpenAIModel(
         "temperature": settings.OPENAI_TEMPERATURE,
     }
 )
-
-# Create agent with tools
-agent = Agent(model=model, tools=[calculator])
+# Create agent with tools including memory
+agent = Agent(
+    model=model,
+    tools=[calculator, mem0_memory, use_llm],
+    system_prompt=settings.SYSTEM_PROMPT,
+)
 
 @app.entrypoint
 def invoke(payload):
@@ -52,9 +54,16 @@ def invoke(payload):
         user_message = validate_payload(payload)
         logger.info(f"Validated user message: {user_message}")
 
+        # Extract user_id from payload or use default
+        user_id = payload.get("user_id", "neo")
+        logger.info(f"Using user_id: {user_id}")
+
+        # Add user_id context to the message for memory operations
+        contextual_message = f"[User ID: {user_id}] {user_message}"
+
         # Process with agent
-        logger.info("Invoking agent with OpenAI model")
-        result = agent(user_message)
+        logger.info("Invoking agent with OpenAI model and memory capabilities")
+        result = agent(contextual_message)
         logger.info("Agent processing completed successfully")
 
         # Return formatted response
