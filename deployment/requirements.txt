@@ -1,17 +1,29 @@
-# Core dependencies for AgentCore deployment
+# Minimal production requirements for OpenAI Strands Agent
+# This excludes heavy OpenTelemetry dependencies for faster builds
+
+# Core AgentCore dependencies
 bedrock-agentcore>=0.1.4
+
+# Strands Agent framework
 strands-agents>=1.9.1
-strands-agents-tools>=0.2.8
+strands-agents-tools[mem0_memory]>=0.2.8
+
+# OpenAI integration
 openai>=1.108.2
+
+# Configuration and utilities
 python-dotenv>=1.0.0
-
-# Observability (required for AgentCore)
-aws-opentelemetry-distro>=0.10.1
-
-# HTTP server dependencies
-fastapi>=0.104.0
-uvicorn[standard]>=0.24.0
 pydantic>=2.0.0
 
-# Utilities
+# HTTP server
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+
+# AWS (without OpenTelemetry)
+boto3>=1.40.36
+
+# Essential utilities
 requests>=2.31.0
+
+# Note: aws-opentelemetry-distro removed to reduce build time
+# Add back if you need detailed observability in production

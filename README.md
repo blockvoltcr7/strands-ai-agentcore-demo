@@ -2,7 +2,6 @@
 
 Production-ready OpenAI Strands Agent optimized for deployment to AWS Bedrock AgentCore. This project focuses exclusively on the working OpenAI integration path, providing a clean, maintainable solution for AI agent deployment.
 
-**📋 Complete Deployment Guide:** For step-by-step AWS deployment instructions, see **[AGENT_CORE_DEPLOYMENT_GUIDE.md](./AGENT_CORE_DEPLOYMENT_GUIDE.md)** - covers IAM setup, ECR configuration, manual console deployment, and troubleshooting.
 
 ## 🚀 Quick Start
 
@@ -14,16 +13,25 @@ cp .env.example .env
 # 2. Install dependencies
 uv sync
 
-# 3. Test locally (from project root)
+# 3a. Run locally (no Docker, recommended for fast dev)
 python src/agents/openai_agent.py
 
-# 4. In another terminal, test the agent
+# 3b. Or run via Docker (from project root)
+python deployment/deploy_local.py
+
+# 4. Test locally in another terminal (works for either method)
 curl -X POST http://localhost:8080/invocations \
   -H "Content-Type: application/json" \
-  -d '{"prompt": "Calculate 15 * 7 and show your work"}'
+  -d '{"prompt": "hello"}'
 
-# 5. Deploy to AgentCore
-python deployment/deploy_to_agentcore.py --role-arn arn:aws:iam::ACCOUNT:role/AgentRuntimeRole
+# 5. Deploy image to ECR for AgentCore (when ready)
+python deployment/deploy_ecr.py
+
+# 6. (After creating/updating your AgentCore runtime in AWS Console)
+#    Invoke your deployed agent (replace with your Agent Runtime ARN)
+python deployment/invoke_agent.py \
+  --agent-arn arn:aws:bedrock-agentcore:us-east-1:ACCOUNT_ID:runtime/YOUR_AGENT_ID \
+  --prompt "Hello from README"
 ```
 
 ## Prerequisites
@@ -56,16 +64,17 @@ pip install -r requirements.txt
 │   └── utils/
 │       └── helpers.py                   # 🛠️ Common utilities
 ├── deployment/
-│   ├── Dockerfile                       # 🐳 AgentCore deployment
-│   ├── requirements.txt                 # 📦 Production dependencies
-│   ├── deploy_to_agentcore.py          # 🚀 Automated deployment
-│   └── invoke_agent.py                  # 🧪 Production testing
+│   ├── Dockerfile                       # 🐳 AgentCore deployment image
+│   ├── requirements.txt                 # 📦 Minimal production deps
+│   ├── deploy_local.py                  # ▶️ Local Docker run
+│   ├── deploy_ecr.py                    # ☁️ Build & push to ECR
+│   ├── invoke_agent.py                  # 🧪 Invoke deployed AgentCore runtime
+│   └── README.md                        # 📖 Deployment docs
 ├── tests/
 │   └── test_agent_basic.py             # 🧪 Basic health checks
 ├── .env.example                         # 📝 Environment template
 ├── pyproject.toml                       # 📋 Project configuration
-├── Dockerfile.local                     # 🐳 Local Docker testing
-├── docker-local-test.sh                # 🧪 Automated Docker testing
+├── requirements.txt                     # 📦 Dev deps (alt to uv)
 └── README.md                           # 📖 This file
 ```
 
@@ -93,21 +102,38 @@ OPENAI_API_KEY=your_openai_api_key
    - Add it to your `.env` file
 
 2. **AWS Credentials**:
-   - Follow the [AWS Setup Guide](AWS_SETUP_GUIDE.md) for detailed instructions
+   - Follow the [AWS IAM Setup Guide](./docs/AWS_IAM_SETUP_GUIDE.md) for detailed instructions on creating IAM users and configuring AWS CLI
 
-## Testing the Agents
+## Testing the Agent Locally
 
 ### 1. OpenAI Agent Testing
 
-#### Production Agent
+#### Development Agent (No Docker)
 ```bash
-# 1. Start the OpenAI agent (from project root)
+# 1. Start the agent locally (no Docker)
 python src/agents/openai_agent.py
 
 # 2. In another terminal, test it
 curl -X POST http://localhost:8080/invocations \
   -H "Content-Type: application/json" \
-  -d '{"prompt": "Calculate 15 * 7 and show your work"}'
+  -d '{"prompt": "hello"}'
+
+# 3. Run comprehensive pytest tests
+pytest tests/test_agent_basic.py -v
+
+# Or run directly
+python tests/test_agent_basic.py
+```
+
+#### Production-like (Docker)
+```bash
+# 1. Start the agent in Docker (from project root)
+python deployment/deploy_local.py
+
+# 2. In another terminal, test it
+curl -X POST http://localhost:8080/invocations \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "hello"}'
 
 # 3. Run comprehensive pytest tests
 pytest tests/test_agent_basic.py -v
@@ -120,7 +146,7 @@ Expected response:
 ```json
 {
   "result": {
-    "content": [{"text": "15 * 7 = 105\n\nUsing the calculator: 15 × 7 = 105"}],
+    "content": [{"text": "Wake up neo"}],
     "role": "assistant"
   }
 }
@@ -129,7 +155,7 @@ Expected response:
 ### 2. Comprehensive Testing
 
 ```bash
-# Run pytest test suite (9 comprehensive tests)
+# Run pytest test suite
 pytest tests/test_agent_basic.py -v
 
 # Quick run with direct execution
@@ -148,42 +174,18 @@ pytest tests/ -v
 - **Health Monitoring**: Built-in /ping endpoint for monitoring
 - **Error Handling**: Robust error handling and validation
 
-## API Usage
+## API Usage (Local)
 
 The agent runs on `http://localhost:8080/invocations` and accepts:
 
 ```json
 {
-  "prompt": "Your message here"
+  "prompt": "hello"
 }
 ```
 
 Health check endpoint: `http://localhost:8080/ping`
 
-## Troubleshooting
-
-### OpenAI Issues
-
-1. **Invalid API Key**:
-   ```
-   Error: The api_key client option must be set
-   ```
-   - Check your `OPENAI_API_KEY` in `.env`
-   - Verify the key is valid at OpenAI Platform
-
-2. **Rate Limiting**:
-   ```
-   Error: Rate limit exceeded
-   ```
-   - OpenAI has usage limits based on your plan
-   - Consider upgrading or reducing request frequency
-
-3. **Model Access**:
-   ```
-   Error: The model gpt-4o does not exist
-   ```
-   - Some models require higher tier access
-   - Try `gpt-4o-mini` or `gpt-3.5-turbo`
 
 ### General Issues
 
@@ -198,17 +200,6 @@ Health check endpoint: `http://localhost:8080/ping`
    echo $OPENAI_API_KEY  # Should show your key
    ```
 
-## Cost Considerations
-
-### OpenAI Pricing (Approximate)
-- **GPT-4o-mini**: ~$0.15 per million input tokens
-- **GPT-4o**: ~$5 per million input tokens
-- **GPT-3.5-turbo**: ~$1 per million input tokens
-
-### AWS Bedrock Pricing
-- **Claude 3 Haiku**: ~$0.25 per million input tokens
-- **Claude 3 Sonnet**: ~$3 per million input tokens
-
 ## Next Steps
 
 1. **Deploy to AWS**: Follow the Strands documentation for AgentCore deployment
@@ -218,7 +209,7 @@ Health check endpoint: `http://localhost:8080/ping`
 
 ## 🚀 Deployment to AWS AgentCore
 
-**📖 For complete step-by-step deployment instructions, see: [AGENT_CORE_DEPLOYMENT_GUIDE.md](./AGENT_CORE_DEPLOYMENT_GUIDE.md)**
+**📖 For complete step-by-step deployment instructions, see: [AGENT_CORE_DEPLOYMENT_GUIDE.md](./docs/AGENT_CORE_DEPLOYMENT_GUIDE.md)**
 
 The comprehensive deployment guide covers:
 - ✅ Complete IAM setup with correct permissions
@@ -235,32 +226,24 @@ For experienced users, here's the condensed version:
 - AWS CLI configured with appropriate permissions
 - IAM role for AgentCore with proper permissions
 - Docker installed and running
-- **See [AGENT_CORE_DEPLOYMENT_GUIDE.md](./AGENT_CORE_DEPLOYMENT_GUIDE.md) for detailed setup**
+- **See [AGENT_CORE_DEPLOYMENT_GUIDE.md](./docs/AGENT_CORE_DEPLOYMENT_GUIDE.md) for detailed setup**
 
-### Automated Deployment
+### Deployment Flow Summary
 
-```bash
-# Deploy to AgentCore (may fail due to service availability)
-python deployment/deploy_to_agentcore.py \
-  --role-arn arn:aws:iam::YOUR-ACCOUNT-ID:role/AgentRuntimeRole \
-  --region us-east-1
-```
-
-### Manual Deployment Steps (Recommended)
-
-```bash
-# 1. Create ECR repository
-aws ecr create-repository --repository-name openai-strands-agent
-
-# 2. Build and push ARM64 image
-docker buildx build --platform linux/arm64 \
-  -f deployment/Dockerfile \
-  -t YOUR-ACCOUNT.dkr.ecr.us-east-1.amazonaws.com/openai-strands-agent:latest \
-  --push .
-
-# 3. Deploy via AWS Console (preferred method)
-# See AGENT_CORE_DEPLOYMENT_GUIDE.md for detailed console instructions
-```
+1. Build and push image to ECR:
+   ```bash
+   python deployment/deploy_ecr.py
+   ```
+2. In AWS Console, create/update an AgentCore Runtime using the pushed image.
+3. Set environment variables in the runtime:
+   - `OPENAI_API_KEY`: your-api-key
+   - `OPENAI_MODEL`: gpt-4o-mini (default)
+4. Test the deployed runtime from your machine:
+   ```bash
+   python deployment/invoke_agent.py \
+     --agent-arn arn:aws:bedrock-agentcore:us-east-1:ACCOUNT_ID:runtime/YOUR_AGENT_ID \
+     --prompt "Hello"
+   ```
 
 ### Testing Deployed Agent
 
@@ -268,135 +251,40 @@ docker buildx build --platform linux/arm64 \
 # Test the deployed agent
 python deployment/invoke_agent.py \
   --agent-arn arn:aws:bedrock-agentcore:us-east-1:ACCOUNT:runtime/AGENT-ID \
-  --prompt "Hello! Test the deployed agent."
+  --prompt "Hello"
 ```
-
-**⚠️ Important:** If automated deployment fails, use the manual console approach detailed in the [comprehensive deployment guide](./AGENT_CORE_DEPLOYMENT_GUIDE.md).
 
 ## 🧪 Testing & Validation
 
 ### Local Testing
 
-#### Option 1: Direct Python Testing
 ```bash
-# 1. Start agent locally
+# Option A: Run locally without Docker (fast dev loop)
 python src/agents/openai_agent.py
 
-# 2. Run comprehensive tests (in another terminal)
-python tests/test_openai_agent_updated.py
-
-# 3. Run integration tests
-python tests/integration_tests.py
-
-# 4. Quick test with curl
+# In another terminal, hit the local endpoint
 curl -X POST http://localhost:8080/invocations \
   -H "Content-Type: application/json" \
-  -d '{"prompt": "Hello! Test the agent."}'
-```
+  -d '{"prompt": "Hello"}'
 
-#### Option 2: Docker Local Testing (Recommended for AgentCore simulation)
-```bash
-# 1. Ensure Docker Desktop is running
-open -a Docker  # On macOS
+# Option B: Run via Dock# Ensure Docker Desktop is running
 
-# 2. Configure your OpenAI API key
-cp .env.example .env
-# Edit .env and add your OPENAI_API_KEY
+# Start the container locally
+python deployment/deploy_local.py
 
-# 3. Run automated Docker test
-./docker-local-test.sh
-
-# Or manually:
-# Build ARM64 image
-docker buildx create --use --name agentcore-builder
-docker buildx build --platform linux/arm64 -f Dockerfile.local -t openai-strands-agent:local --load .
-
-# Run container
-docker run --platform linux/arm64 -p 8080:8080 --env-file .env openai-strands-agent:local
+# In another terminal, hit the local endpoint
+curl -X POST http://localhost:8080/invocations \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "Hello"}'
 ```
 
 ### Production Validation
 ```bash
-# Test deployed agent performance
+# Test deployed agent (replace with your ARN)
 python deployment/invoke_agent.py \
-  --agent-arn YOUR-AGENT-ARN \
-  --prompt "Calculate 15 * 7 and show your work"
+  --agent-arn arn:aws:bedrock-agentcore:us-east-1:ACCOUNT_ID:runtime/YOUR_AGENT_ID \
+  --prompt "hello"
 ```
-
-## 🛠️ Advanced Configuration
-
-### Custom Models
-Edit `src/config/settings.py` to use different OpenAI models:
-```python
-OPENAI_MODEL = "gpt-4o"  # or gpt-3.5-turbo, gpt-4, etc.
-```
-
-### Observability
-Enable tracing in `.env`:
-```bash
-ENABLE_TRACING=true
-```
-
-### Performance Tuning
-Adjust model parameters in settings:
-```python
-OPENAI_MAX_TOKENS = 2000
-OPENAI_TEMPERATURE = 0.3
-```
-
-## 📊 Monitoring & Observability
-
-AgentCore provides built-in observability through CloudWatch:
-
-1. **Enable Transaction Search** in CloudWatch console
-2. **View metrics** in GenAI Observability dashboard
-3. **Monitor traces** with X-Ray integration
-
-## 🔧 Troubleshooting
-
-### Common Issues
-
-1. **File Not Found Errors**
-   ```bash
-   # Always run commands from the project root directory
-   pwd  # Should show: .../strands-ai-agentcore-demo
-   python src/agents/openai_agent.py  # Correct path
-   ```
-
-2. **OpenAI API Key Issues**
-   ```bash
-   # Check if key is valid
-   curl -H "Authorization: Bearer $OPENAI_API_KEY" \
-        https://api.openai.com/v1/models
-   ```
-
-3. **Module Import Errors**
-   ```bash
-   # Ensure dependencies are installed
-   uv sync
-   # Or with pip
-   pip install -r requirements.txt
-   ```
-
-4. **Docker Build Issues**
-   ```bash
-   # Ensure buildx is set up for ARM64
-   docker buildx create --use
-   ```
-
-5. **AgentCore Deployment Issues**
-   ```bash
-   # Check IAM permissions
-   aws sts get-caller-identity
-   aws iam get-role --role-name AgentRuntimeRole
-   ```
-
-### Performance Optimization
-
-- **Use GPT-4o-mini** for cost efficiency
-- **Adjust max_tokens** based on use case
-- **Implement caching** for repeated requests
-- **Monitor response times** with integration tests
 
 ## 📚 References
 

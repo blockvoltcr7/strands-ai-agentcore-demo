@@ -9,7 +9,7 @@ dependencies = [
     "bedrock-agentcore>=0.1.4",
     # Strands Agent framework
     "strands-agents>=1.9.1",
-    "strands-agents-tools>=0.2.8",
+    "strands-agents-tools[mem0-memory]>=0.2.8",
     # OpenAI integration
     "openai>=1.108.2",
     # Configuration and utilities
