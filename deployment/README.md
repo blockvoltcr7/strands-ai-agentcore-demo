@@ -89,7 +89,9 @@ Use `deployment/invoke_agent.py` to send a prompt to your deployed AgentCore run
 # From project root
 python3 deployment/invoke_agent.py \
   --agent-arn arn:aws:bedrock-agentcore:us-east-1:343075903183:runtime/Morpheus-KcMY9vEB51 \
-  --prompt "hello"
+  --prompt "hello" \
+  --session-id "my-session-id"
+  --qualifier "DEFAULT"
 ```
 
 Notes:

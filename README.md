@@ -282,8 +282,10 @@ curl -X POST http://localhost:8080/invocations \
 ```bash
 # Test deployed agent (replace with your ARN)
 python deployment/invoke_agent.py \
-  --agent-arn arn:aws:bedrock-agentcore:us-east-1:ACCOUNT_ID:runtime/YOUR_AGENT_ID \
-  --prompt "hello"
+  --agent-arn arn:aws:bedrock-agentcore:us-east-1:XXXXXXXXX:runtime/YOUR_AGENT_ID \
+  --prompt "hello" \
+  --session-id "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" \
+  --qualifier "DEFAULT"
 ```
 
 ## 📚 References
